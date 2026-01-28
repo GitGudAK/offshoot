@@ -2,23 +2,32 @@
 
 Create styled image variations using custom-trained AI models. Upload samples, train your style, generate offshoots.
 
-
 ## ✨ Features
 
 | Feature | Description |
 |---------|-------------|
 | **Custom Model Training** | Upload style samples → Train LoRA models via Replicate API |
-| **Image Variations** | Input reference image → Generate multiple styled offshoots |
+| **Image Generation** | Generate variations with Google Gemini (Imagen 3) |
+| **Product Page Scraping** | Paste Amazon/Shopify URLs → Extract product images |
+| **Model Management** | Save, load, and switch between trained models |
 | **Style Analysis** | Automatic color palette extraction and style profiling |
-| **Quality Reports** | Color accuracy and style consistency validation |
+| **Unified Settings** | Manage API keys for Gemini + Replicate in one place |
+
+## 🔑 API Keys Required
+
+| Provider | Purpose | Get Key |
+|----------|---------|---------|
+| **Google Gemini** | Image generation | [Google AI Studio](https://aistudio.google.com/apikey) |
+| **Replicate** | LoRA training (optional) | [Replicate](https://replicate.com/account/api-tokens) |
 
 ## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
     subgraph Input["📥 Sample Collection"]
-        A[📁 Upload Samples] --> B[Style Analyzer]
-        A2[🔗 URL Import] --> B
+        A[📁 Upload Files] --> B[Style Analyzer]
+        A2[🔗 Image URL] --> B
+        A3[🛒 Product Page] --> B
     end
     
     subgraph Training["🧠 Model Training"]
@@ -28,7 +37,7 @@ flowchart LR
     end
     
     subgraph Generation["🌱 Offshoot Creation"]
-        F[📷 Reference Image] --> G[Generation Engine]
+        F[📷 Reference Image] --> G[Gemini Imagen 3]
         E --> G
         G --> H[Multiple Offshoots]
     end
@@ -42,59 +51,58 @@ flowchart LR
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- A [Replicate](https://replicate.com) account and API key
-- Modern web browser
-
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/offshoot.git
-   cd offshoot
-   ```
+```bash
+git clone https://github.com/GitGudAK/offshoot.git
+cd offshoot
+npx serve
+```
 
-2. **Serve the application**
-   ```bash
-   npx serve
-   ```
+Open **http://localhost:3000**
 
-3. **Open in browser**
-   ```
-   http://localhost:3000
-   ```
+### Configuration
 
-4. **Configure API Key**
-   - Click the ⚙️ settings icon
-   - Enter your Replicate API key
-   - Click Save Settings
+1. Click ⚙️ **Settings**
+2. Enter your **Gemini API key** (required for generation)
+3. Enter your **Replicate API key** (optional, for training)
+4. Save Settings
 
 ## 📖 Usage
 
-### 1. Upload Style Samples
+### Upload Samples
 
-- Drag and drop 5-20 images that represent your target style
-- Or paste direct image URLs to import
-- The system will automatically extract color palettes and style characteristics
+Three ways to add images:
 
-### 2. Train Custom Model
+| Method | How |
+|--------|-----|
+| **Drag & Drop** | Drop files directly onto upload zone |
+| **Image URL** | Paste direct image URL (`.jpg`, `.png`) |
+| **Product Page** | Paste Amazon/Shopify URL → Select images from picker |
 
-| Parameter | Description | Recommended |
-|-----------|-------------|-------------|
-| Model Name | Unique identifier | `my-style-v1` |
-| Base Model | Foundation model | Flux Dev |
-| Training Steps | Iterations | 500-1000 |
-| LoRA Rank | Model capacity | 16 |
+### Train Custom Model
 
-Training typically takes 5-15 minutes.
+| Parameter | What It Does | Default |
+|-----------|--------------|---------|
+| **Training Duration** | How long AI studies your images | 500 steps |
+| **Style Memory** | How much detail to remember | 16 |
+| **Learning Speed** | How aggressively AI learns | Normal |
 
-### 3. Generate Offshoots
+Training takes 5-15 minutes via Replicate.
+
+### Model Management
+
+- **Save models** to browser storage
+- **Switch between** multiple trained models
+- **View model details** (training date, base model, etc.)
+- Models persist across browser sessions
+
+### Generate Offshoots
 
 1. Upload a reference image
 2. Select your trained model
-3. Adjust variation strength (50% is balanced)
-4. Choose number of offshoots (1-8)
+3. Adjust variation strength
+4. Choose number of outputs (1-8)
 5. Click **Generate Offshoots**
 
 ## 📁 Project Structure
@@ -107,38 +115,35 @@ offshoot/
 └── modules/
     ├── asset-ingestion.js  # File upload & URL fetching
     ├── training-engine.js  # Replicate LoRA training
-    ├── generation-agent.js # Image-to-image generation
+    ├── generation-agent.js # Gemini image generation
     ├── color-precision.js  # Style color extraction
-    └── model-registry.js   # Model persistence
+    ├── model-registry.js   # Model persistence & management
+    └── product-scraper.js  # E-commerce image extraction
 ```
 
 ## 🔌 API Integration
 
-| Feature | Model | Cost |
-|---------|-------|------|
-| LoRA Training | `ostris/flux-dev-lora-trainer` | ~$0.10-0.50/job |
-| Image Generation | `google/nano-banana-pro` | ~$0.01-0.05/image |
-
-**Nano Banana Pro** is Google's state-of-the-art image generation model (Gemini 3 Pro based) featuring:
-- Character consistency across variations
-- Precise local editing
-- High-quality text rendering
-- Up to 4K resolution output
+| Feature | Provider | Model | Cost |
+|---------|----------|-------|------|
+| Training | Replicate | `ostris/flux-dev-lora-trainer` | ~$0.10-0.50/job |
+| Generation | Google | Imagen 3 (Gemini API) | ~$0.01-0.04/image |
 
 ## 🎨 Design
 
 - **Dark mode** interface with purple/indigo accents
 - **Glassmorphism** effects
-- **Smooth animations**
+- **Smooth animations** and micro-interactions
 - **Responsive** layout
 
 ## 📈 Roadmap
 
-- [ ] Webhook-based training status
+- [x] Gemini API integration
+- [x] Product page scraping
+- [x] Unified settings UI
+- [x] Simplified training parameters
 - [ ] Batch generation mode
 - [ ] Style comparison tools
-- [ ] Team collaboration
-- [ ] Figma/Adobe integration
+- [ ] Export to Figma/Adobe
 
 ## 🤝 Contributing
 
@@ -146,4 +151,4 @@ Contributions welcome! Please submit a Pull Request.
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License
