@@ -32,6 +32,7 @@ export class ProductScraper {
                 throw new Error('No product images found on this page');
             }
 
+            this.app.showToast(`Found ${images.length} images`, 'success');
             return images;
 
         } catch (error) {
@@ -74,38 +75,40 @@ export class ProductScraper {
         const images = new Set();
         const baseUrlObj = new URL(baseUrl);
 
-        // Strategy 1: Open Graph image
+        // Strategy 1: Amazon data-a-dynamic-image JSON (main product images)
+        const dynamicImageMatch = html.match(/data-a-dynamic-image=["']({[^"']+})["']/gi);
+        if (dynamicImageMatch) {
+            dynamicImageMatch.forEach(match => {
+                try {
+                    // Extract the JSON string
+                    const jsonStr = match.match(/=["']({[^"']+})["']/)?.[1];
+                    if (jsonStr) {
+                        // Decode HTML entities
+                        const decoded = jsonStr.replace(/&quot;/g, '"');
+                        const imgObj = JSON.parse(decoded);
+                        // Keys are the image URLs
+                        Object.keys(imgObj).forEach(url => {
+                            if (url.includes('images') && !url.includes('sprite')) {
+                                images.add(this.cleanImageUrl(url));
+                            }
+                        });
+                    }
+                } catch (e) {
+                    // JSON parse failed, skip
+                }
+            });
+        }
+
+        // Strategy 2: Open Graph image
         const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/gi);
         if (ogMatch) {
             ogMatch.forEach(match => {
                 const urlMatch = match.match(/content=["']([^"']+)["']/i);
-                if (urlMatch) images.add(this.normalizeUrl(urlMatch[1], baseUrlObj));
+                if (urlMatch && urlMatch[1].startsWith('http')) {
+                    images.add(this.cleanImageUrl(urlMatch[1]));
+                }
             });
         }
-
-        // Strategy 2: High-res image patterns (common in e-commerce)
-        const patterns = [
-            // Amazon high-res
-            /https?:\/\/[^"'\s]*images-amazon[^"'\s]*\._[A-Z]{2}\d+_[^"'\s]*\.(?:jpg|jpeg|png|webp)/gi,
-            // Shopify CDN
-            /https?:\/\/cdn\.shopify\.com\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi,
-            // General product image patterns
-            /https?:\/\/[^"'\s]*(?:product|item|goods|media|image)[^"'\s]*\.(?:jpg|jpeg|png|webp)/gi,
-            // Large image indicators
-            /https?:\/\/[^"'\s]*(?:large|big|hi-res|zoom|full)[^"'\s]*\.(?:jpg|jpeg|png|webp)/gi,
-        ];
-
-        patterns.forEach(pattern => {
-            const matches = html.match(pattern);
-            if (matches) {
-                matches.forEach(url => {
-                    // Skip tiny images (thumbnails, icons)
-                    if (!url.includes('thumb') && !url.includes('icon') && !url.includes('_SS40')) {
-                        images.add(this.cleanImageUrl(url));
-                    }
-                });
-            }
-        });
 
         // Strategy 3: JSON-LD structured data
         const jsonLdMatch = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
@@ -121,36 +124,92 @@ export class ProductScraper {
             });
         }
 
-        // Strategy 4: Data attributes (lazy-loaded images)
-        const dataImgMatches = html.match(/data-(?:src|zoom|large|full|original)=["']([^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/gi);
-        if (dataImgMatches) {
-            dataImgMatches.forEach(match => {
-                const urlMatch = match.match(/=["']([^"']+)["']/);
-                if (urlMatch) {
-                    images.add(this.normalizeUrl(urlMatch[1], baseUrlObj));
+        // Strategy 4: High-res srcset images
+        const srcsetMatches = html.match(/srcset=["']([^"']+)["']/gi);
+        if (srcsetMatches) {
+            srcsetMatches.forEach(match => {
+                const srcset = match.match(/=["']([^"']+)["']/)?.[1];
+                if (srcset) {
+                    // Parse srcset - format: "url1 1x, url2 2x" or "url1 100w, url2 200w"
+                    const parts = srcset.split(',');
+                    parts.forEach(part => {
+                        const url = part.trim().split(/\s+/)[0];
+                        if (url && url.startsWith('http') && this.isProductImage(url)) {
+                            images.add(this.cleanImageUrl(url));
+                        }
+                    });
                 }
             });
         }
 
-        // Strategy 5: Standard img tags with good src
-        const imgMatches = html.match(/<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["'][^>]*>/gi);
+        // Strategy 5: Data attributes (lazy-loaded images)
+        const dataAttrs = ['data-src', 'data-zoom-image', 'data-large', 'data-full', 'data-original', 'data-old-hires'];
+        dataAttrs.forEach(attr => {
+            const regex = new RegExp(`${attr}=["']([^"']+)["']`, 'gi');
+            const matches = html.match(regex);
+            if (matches) {
+                matches.forEach(match => {
+                    const urlMatch = match.match(/=["']([^"']+)["']/);
+                    if (urlMatch && urlMatch[1].startsWith('http') && this.isProductImage(urlMatch[1])) {
+                        images.add(this.cleanImageUrl(urlMatch[1]));
+                    }
+                });
+            }
+        });
+
+        // Strategy 6: Standard img tags (more selective)
+        const imgMatches = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi);
         if (imgMatches) {
             imgMatches.forEach(match => {
                 const srcMatch = match.match(/src=["']([^"']+)["']/);
                 if (srcMatch) {
                     const url = srcMatch[1];
-                    // Filter for likely product images (not icons, logos, etc.)
-                    if (url.length > 50 && !url.includes('logo') && !url.includes('icon') && !url.includes('sprite')) {
-                        images.add(this.normalizeUrl(url, baseUrlObj));
+                    if (url.startsWith('http') && this.isProductImage(url) && url.length > 60) {
+                        images.add(this.cleanImageUrl(url));
                     }
                 }
             });
         }
 
-        // Convert to array and filter
+        // Convert to array and filter valid URLs only
         return Array.from(images)
-            .filter(url => url && url.startsWith('http'))
+            .filter(url => {
+                try {
+                    new URL(url);
+                    return url.startsWith('http') &&
+                        !url.includes('sprite') &&
+                        !url.includes('data:') &&
+                        !url.includes('pixel') &&
+                        !url.includes('blank');
+                } catch {
+                    return false;
+                }
+            })
             .slice(0, 20); // Max 20 images
+    }
+
+    /**
+     * Check if URL looks like a product image
+     */
+    isProductImage(url) {
+        const lowUrl = url.toLowerCase();
+        // Skip common non-product images
+        if (lowUrl.includes('logo') ||
+            lowUrl.includes('icon') ||
+            lowUrl.includes('sprite') ||
+            lowUrl.includes('nav-') ||
+            lowUrl.includes('button') ||
+            lowUrl.includes('badge') ||
+            lowUrl.includes('banner') ||
+            lowUrl.includes('arrow') ||
+            lowUrl.includes('checkbox') ||
+            lowUrl.includes('_SS40') ||
+            lowUrl.includes('_SS50') ||
+            lowUrl.includes('transparent-pixel')) {
+            return false;
+        }
+        // Must be an image
+        return /\.(jpg|jpeg|png|webp|gif)/i.test(url);
     }
 
     /**
@@ -167,20 +226,23 @@ export class ProductScraper {
         // Look for image properties
         ['image', 'images', 'photo', 'photos', 'thumbnail'].forEach(key => {
             if (data[key]) {
-                if (typeof data[key] === 'string') {
-                    images.add(data[key]);
+                if (typeof data[key] === 'string' && data[key].startsWith('http')) {
+                    images.add(this.cleanImageUrl(data[key]));
                 } else if (Array.isArray(data[key])) {
                     data[key].forEach(img => {
-                        if (typeof img === 'string') images.add(img);
-                        else if (img?.url) images.add(img.url);
+                        if (typeof img === 'string' && img.startsWith('http')) {
+                            images.add(this.cleanImageUrl(img));
+                        } else if (img?.url && img.url.startsWith('http')) {
+                            images.add(this.cleanImageUrl(img.url));
+                        }
                     });
-                } else if (data[key]?.url) {
-                    images.add(data[key].url);
+                } else if (data[key]?.url && data[key].url.startsWith('http')) {
+                    images.add(this.cleanImageUrl(data[key].url));
                 }
             }
         });
 
-        // Recurse into nested objects
+        // Recurse into nested objects (but limit depth)
         Object.values(data).forEach(value => {
             if (typeof value === 'object') {
                 this.extractFromJsonLd(value, images);
@@ -189,54 +251,82 @@ export class ProductScraper {
     }
 
     /**
-     * Normalize relative URLs to absolute
-     */
-    normalizeUrl(url, baseUrlObj) {
-        if (url.startsWith('//')) {
-            return `https:${url}`;
-        }
-        if (url.startsWith('/')) {
-            return `${baseUrlObj.origin}${url}`;
-        }
-        if (!url.startsWith('http')) {
-            return `${baseUrlObj.origin}/${url}`;
-        }
-        return url;
-    }
-
-    /**
      * Clean up image URL (remove tracking params, get higher res)
      */
     cleanImageUrl(url) {
-        // Amazon: get largest version
-        if (url.includes('amazon')) {
-            return url.replace(/\._[A-Z]{2}\d+_/, '.');
+        // Remove any trailing garbage from regex
+        url = url.split('"')[0].split("'")[0].split(' ')[0];
+
+        // Amazon: get largest version by removing size constraints
+        if (url.includes('amazon') || url.includes('ssl-images-amazon')) {
+            // Remove size indicators like ._AC_SX466_ or ._SL1500_
+            url = url.replace(/\._[A-Z]{2}\d*_?[A-Z]*\d*_/, '.');
+            url = url.replace(/\._[A-Z]+_\d+_/, '.');
         }
+
         // Shopify: get largest version
-        if (url.includes('shopify')) {
-            return url.replace(/_\d+x\d*\./, '.');
+        if (url.includes('shopify') || url.includes('cdn.shopify')) {
+            url = url.replace(/_\d+x\d*\./, '.');
         }
+
         return url;
     }
 
     /**
-     * Load an image URL as a data URL
+     * Load an image URL as a data URL using canvas (avoids CORS issues)
      */
     async loadAsDataUrl(imageUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                } catch (e) {
+                    console.error('Canvas conversion failed:', e);
+                    resolve(null);
+                }
+            };
+
+            img.onerror = () => {
+                // Try via proxy as fallback
+                this.loadViaProxy(imageUrl).then(resolve);
+            };
+
+            // Try direct load first (works for many CDNs that allow cross-origin)
+            img.src = imageUrl;
+        });
+    }
+
+    /**
+     * Load image via proxy as fallback
+     */
+    async loadViaProxy(imageUrl) {
         try {
-            // Use proxy for CORS
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+            // Use corsproxy.io which handles binary content better
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`;
             const response = await fetch(proxyUrl);
+
+            if (!response.ok) {
+                return null;
+            }
+
             const blob = await response.blob();
 
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result);
-                reader.onerror = reject;
+                reader.onerror = () => resolve(null);
                 reader.readAsDataURL(blob);
             });
         } catch (error) {
-            console.error('Failed to load image:', imageUrl, error);
+            console.error('Proxy load failed:', imageUrl, error);
             return null;
         }
     }
