@@ -6,7 +6,7 @@
 export class ModelRegistry {
     constructor(app) {
         this.app = app;
-        this.storageKey = 'brandai-models';
+        this.storageKey = 'offshoot-models';
         this.models = this.loadModels();
     }
 

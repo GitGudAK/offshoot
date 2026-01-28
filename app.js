@@ -1,6 +1,6 @@
 /**
- * Brand AI Engine - Main Application
- * Enterprise-grade generative AI content engine with real API integration
+ * Offshoot - AI Image Variation Engine
+ * Create styled image variations using custom-trained LoRA models
  */
 
 import { AssetIngestion } from './modules/asset-ingestion.js';
@@ -44,12 +44,12 @@ class BrandAIEngine {
             autoAnalyze: true,
             showPrecision: true
         };
-        const saved = localStorage.getItem('brandai-settings');
+        const saved = localStorage.getItem('offshoot-settings');
         return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
     }
 
     saveSettings() {
-        localStorage.setItem('brandai-settings', JSON.stringify(this.settings));
+        localStorage.setItem('offshoot-settings', JSON.stringify(this.settings));
     }
 
     // ===============================

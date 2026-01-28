@@ -268,14 +268,14 @@ export class ColorPrecision {
     /**
      * Get brand color palette
      */
-    getBrandColors() {
+    getStyleColors() {
         return this.brandColors;
     }
 
     /**
      * Find closest brand color
      */
-    findClosestBrandColor(hex) {
+    findClosestStyleColor(hex) {
         if (this.brandColors.length === 0) return null;
 
         const rgb = this.hexToRgb(hex);

@@ -1,6 +1,6 @@
 /**
  * Asset Ingestion Module
- * Handles file uploads and URL scraping for brand assets
+ * Handles file uploads and URL scraping for style samples
  */
 
 export class AssetIngestion {

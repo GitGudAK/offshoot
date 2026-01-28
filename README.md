@@ -1,41 +1,41 @@
-# Brand AI Content Engine 🎨
+# Offshoot 🌱
 
-An enterprise-grade generative AI content engine for creating brand-consistent image variations using custom-trained LoRA models.
+Create styled image variations using custom-trained AI models. Upload samples, train your style, generate offshoots.
 
-![Brand AI Engine Demo](docs/demo.gif)
+![Offshoot Demo](docs/demo.gif)
 
 ## ✨ Features
 
-| Component | Description |
-|-----------|-------------|
-| **Custom Model Training** | Upload brand assets → Train LoRA models via Replicate API |
-| **Image-to-Image Variations** | Input reference image → Generate multiple styled variations |
-| **Technical Precision** | Automatic color palette extraction and validation |
-| **Brand Governance** | Style consistency checking and enforcement |
+| Feature | Description |
+|---------|-------------|
+| **Custom Model Training** | Upload style samples → Train LoRA models via Replicate API |
+| **Image Variations** | Input reference image → Generate multiple styled offshoots |
+| **Style Analysis** | Automatic color palette extraction and style profiling |
+| **Quality Reports** | Color accuracy and style consistency validation |
 
 ## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
-    subgraph Input["📥 Asset Ingestion"]
-        A[📁 Upload Assets] --> B[Asset Processor]
+    subgraph Input["📥 Sample Collection"]
+        A[📁 Upload Samples] --> B[Style Analyzer]
         A2[🔗 URL Import] --> B
     end
     
-    subgraph Training["🧠 Custom Model Training"]
+    subgraph Training["🧠 Model Training"]
         B --> C[Color Extractor]
         C --> D[LoRA Trainer<br/>Replicate API]
         D --> E[Model Registry]
     end
     
-    subgraph Generation["🎨 Agentic Workflows"]
-        F[📷 Reference Image] --> G[Generation Agent]
+    subgraph Generation["🌱 Offshoot Creation"]
+        F[📷 Reference Image] --> G[Generation Engine]
         E --> G
-        G --> H[Multiple Variations]
+        G --> H[Multiple Offshoots]
     end
     
-    subgraph Validation["✅ Technical Precision"]
-        H --> I[Color Precision Check]
+    subgraph Validation["✅ Quality Check"]
+        H --> I[Color Accuracy]
         I --> J[Style Consistency]
         J --> K[Final Output]
     end
@@ -46,25 +46,19 @@ flowchart LR
 ### Prerequisites
 
 - A [Replicate](https://replicate.com) account and API key
-- Modern web browser (Chrome, Firefox, Safari, Edge)
+- Modern web browser
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/brand-ai-engine.git
-   cd brand-ai-engine
+   git clone https://github.com/YOUR_USERNAME/offshoot.git
+   cd offshoot
    ```
 
 2. **Serve the application**
    ```bash
-   # Using npx
    npx serve
-   
-   # Or using Python
-   python -m http.server 3000
-   
-   # Or using any static file server
    ```
 
 3. **Open in browser**
@@ -79,93 +73,72 @@ flowchart LR
 
 ## 📖 Usage
 
-### 1. Upload Brand Assets
+### 1. Upload Style Samples
 
-- Drag and drop 5-20 images that represent your brand's visual style
+- Drag and drop 5-20 images that represent your target style
 - Or paste direct image URLs to import
-- The system will automatically extract your brand's color palette
+- The system will automatically extract color palettes and style characteristics
 
 ### 2. Train Custom Model
 
-Configure your LoRA training:
-
 | Parameter | Description | Recommended |
 |-----------|-------------|-------------|
-| Model Name | Unique identifier | `my-brand-v1` |
+| Model Name | Unique identifier | `my-style-v1` |
 | Base Model | Foundation model | Flux Dev |
 | Training Steps | Iterations | 500-1000 |
 | LoRA Rank | Model capacity | 16 |
 
 Training typically takes 5-15 minutes.
 
-### 3. Generate Variations
+### 3. Generate Offshoots
 
 1. Upload a reference image
 2. Select your trained model
 3. Adjust variation strength (50% is balanced)
-4. Choose number of outputs (1-8)
-5. Click **Generate Variations**
+4. Choose number of offshoots (1-8)
+5. Click **Generate Offshoots**
 
 ## 📁 Project Structure
 
 ```
-brand-ai-engine/
+offshoot/
 ├── index.html              # Main HTML entry point
-├── index.css               # Premium dark mode design system
+├── index.css               # Dark mode design system
 ├── app.js                  # Application orchestrator
 └── modules/
     ├── asset-ingestion.js  # File upload & URL fetching
     ├── training-engine.js  # Replicate LoRA training
     ├── generation-agent.js # Image-to-image generation
-    ├── color-precision.js  # Brand color extraction
+    ├── color-precision.js  # Style color extraction
     └── model-registry.js   # Model persistence
 ```
 
 ## 🔌 API Integration
 
-This project uses the [Replicate API](https://replicate.com/docs) for:
-
-| Feature | Model | Approximate Cost |
-|---------|-------|------------------|
-| LoRA Training | `ostris/flux-dev-lora-trainer` | $0.10-0.50/job |
+| Feature | Replicate Model | Cost |
+|---------|-----------------|------|
+| LoRA Training | `ostris/flux-dev-lora-trainer` | ~$0.10-0.50/job |
 | Image Generation | Custom trained model | ~$0.01/image |
 
-## 🎨 Design System
+## 🎨 Design
 
-The UI features a premium dark mode interface with:
-
-- **Glassmorphism** effects for depth
-- **Purple/indigo** accent gradient
-- **Smooth animations** for polish
-- **Responsive** design for all screen sizes
-
-## 🛠️ Tech Stack
-
-- **Frontend**: Vanilla HTML, CSS, JavaScript (ES Modules)
-- **AI Training**: Replicate API (Flux LoRA Trainer)
-- **Image Generation**: Replicate API (Custom LoRA models)
-- **Storage**: Browser LocalStorage for persistence
-- **Dependencies**: JSZip (loaded dynamically for exports)
+- **Dark mode** interface with purple/indigo accents
+- **Glassmorphism** effects
+- **Smooth animations**
+- **Responsive** layout
 
 ## 📈 Roadmap
 
-- [ ] Backend server for webhook-based training status
-- [ ] Logo detection with ML model
-- [ ] A/B testing for generated variations
-- [ ] Figma/Adobe Express integration
+- [ ] Webhook-based training status
 - [ ] Batch generation mode
-- [ ] Team collaboration features
+- [ ] Style comparison tools
+- [ ] Team collaboration
+- [ ] Figma/Adobe integration
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Please submit a Pull Request.
 
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## 🙏 Acknowledgments
-
-- [Replicate](https://replicate.com) for the AI infrastructure
-- [Ostris](https://github.com/ostris) for the Flux LoRA trainer
-- Inspired by enterprise brand governance best practices
