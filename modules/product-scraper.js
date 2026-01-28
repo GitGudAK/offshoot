@@ -6,8 +6,12 @@
 export class ProductScraper {
     constructor(app) {
         this.app = app;
-        // Free public CORS proxy
-        this.proxyUrl = 'https://api.allorigins.win/get?url=';
+        // Multiple CORS proxies for fallback
+        this.proxies = [
+            { name: 'allorigins', url: 'https://api.allorigins.win/get?url=', type: 'json', key: 'contents' },
+            { name: 'corsproxy', url: 'https://corsproxy.io/?', type: 'text' },
+            { name: 'corsanywhere', url: 'https://cors-anywhere.herokuapp.com/', type: 'text' },
+        ];
     }
 
     /**
@@ -54,18 +58,52 @@ export class ProductScraper {
     }
 
     /**
-     * Fetch page HTML through CORS proxy
+     * Fetch page HTML through CORS proxy with fallbacks
      */
     async fetchPage(url) {
-        const proxyUrl = `${this.proxyUrl}${encodeURIComponent(url)}`;
+        let lastError = null;
 
-        const response = await fetch(proxyUrl);
-        if (!response.ok) {
-            throw new Error('Failed to fetch page');
+        for (const proxy of this.proxies) {
+            try {
+                console.log(`Trying proxy: ${proxy.name}`);
+                const proxyUrl = `${proxy.url}${encodeURIComponent(url)}`;
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                const response = await fetch(proxyUrl, {
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                    }
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                let html;
+                if (proxy.type === 'json') {
+                    const data = await response.json();
+                    html = data[proxy.key];
+                } else {
+                    html = await response.text();
+                }
+
+                if (html && html.length > 100) {
+                    console.log(`Success with proxy: ${proxy.name}`);
+                    return html;
+                }
+                throw new Error('Empty response');
+
+            } catch (error) {
+                console.warn(`Proxy ${proxy.name} failed:`, error.message);
+                lastError = error;
+            }
         }
 
-        const data = await response.json();
-        return data.contents;
+        throw new Error(`All proxies failed. Last error: ${lastError?.message || 'Unknown'}`);
     }
 
     /**
