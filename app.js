@@ -8,6 +8,7 @@ import { TrainingEngine } from './modules/training-engine.js';
 import { GenerationAgent } from './modules/generation-agent.js';
 import { ColorPrecision } from './modules/color-precision.js';
 import { ModelRegistry } from './modules/model-registry.js';
+import { ProductScraper } from './modules/product-scraper.js';
 
 class BrandAIEngine {
     constructor() {
@@ -20,6 +21,7 @@ class BrandAIEngine {
         this.generationAgent = new GenerationAgent(this);
         this.colorPrecision = new ColorPrecision(this);
         this.modelRegistry = new ModelRegistry(this);
+        this.productScraper = new ProductScraper(this);
 
         this.init();
     }
@@ -97,10 +99,34 @@ class BrandAIEngine {
         const fetchUrlBtn = document.getElementById('fetchUrlBtn');
         const clearAllBtn = document.getElementById('clearAllBtn');
         const startTrainingBtn = document.getElementById('startTrainingBtn');
+        const urlTabs = document.querySelectorAll('.url-tab');
+        const urlHint = document.getElementById('urlHint');
+
+        // Track current URL input mode
+        this.urlInputMode = 'image';
+
+        // URL tab switching
+        urlTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                urlTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                this.urlInputMode = tab.dataset.type;
+
+                // Update placeholder and hint
+                if (this.urlInputMode === 'product') {
+                    urlInput.placeholder = 'Paste product page URL (Amazon, Shopify, etc.)';
+                    urlHint.textContent = 'We\'ll extract product images from the page';
+                } else {
+                    urlInput.placeholder = 'Paste image URL...';
+                    urlHint.textContent = 'Direct link to an image file';
+                }
+            });
+        });
 
         // Click to upload
         uploadZone.addEventListener('click', (e) => {
-            if (e.target.closest('.url-input-wrap')) return;
+            if (e.target.closest('.url-input-wrap') || e.target.closest('.url-tabs')) return;
             fileInput.click();
         });
 
@@ -125,16 +151,22 @@ class BrandAIEngine {
             this.handleFileUpload(e.dataTransfer.files);
         });
 
-        // URL fetch
-        fetchUrlBtn.addEventListener('click', () => {
+        // URL fetch - handles both image URLs and product pages
+        fetchUrlBtn.addEventListener('click', async () => {
             const url = urlInput.value.trim();
-            if (url) {
-                this.assetIngestion.fetchFromUrl(url);
+            if (!url) return;
+
+            if (this.urlInputMode === 'product') {
+                await this.handleProductUrl(url);
+            } else {
+                await this.assetIngestion.fetchFromUrl(url);
             }
+            urlInput.value = '';
         });
 
         urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                e.stopPropagation();
                 fetchUrlBtn.click();
             }
         });
@@ -147,6 +179,115 @@ class BrandAIEngine {
         // Start training button
         startTrainingBtn.addEventListener('click', () => {
             this.switchTab('train');
+        });
+
+        // Product picker modal events
+        this.bindProductPickerEvents();
+    }
+
+    /**
+     * Handle product page URL - extract and show images
+     */
+    async handleProductUrl(url) {
+        try {
+            const images = await this.productScraper.extractImages(url);
+            this.showProductPicker(images);
+        } catch (error) {
+            this.showToast(error.message || 'Failed to extract images', 'error');
+        }
+    }
+
+    /**
+     * Show product image picker modal
+     */
+    showProductPicker(images) {
+        const modal = document.getElementById('productPickerModal');
+        const grid = document.getElementById('productImagesGrid');
+        const status = document.getElementById('pickerStatus');
+        const countEl = document.getElementById('selectedCount');
+        const importBtn = document.getElementById('importSelectedBtn');
+
+        this.selectedProductImages = new Set();
+
+        if (images.length === 0) {
+            status.textContent = 'No product images found';
+            status.style.display = 'block';
+            grid.innerHTML = '';
+        } else {
+            status.style.display = 'none';
+            grid.innerHTML = images.map((url, i) => `
+                <div class="product-image-item" data-url="${url}" data-index="${i}">
+                    <img src="${url}" alt="Product image ${i + 1}" loading="lazy">
+                    <div class="check-overlay">✓</div>
+                </div>
+            `).join('');
+
+            // Bind click handlers
+            grid.querySelectorAll('.product-image-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const url = item.dataset.url;
+                    if (this.selectedProductImages.has(url)) {
+                        this.selectedProductImages.delete(url);
+                        item.classList.remove('selected');
+                    } else {
+                        this.selectedProductImages.add(url);
+                        item.classList.add('selected');
+                    }
+                    countEl.textContent = `${this.selectedProductImages.size} selected`;
+                    importBtn.disabled = this.selectedProductImages.size === 0;
+                });
+            });
+        }
+
+        countEl.textContent = '0 selected';
+        importBtn.disabled = true;
+        modal.classList.add('visible');
+    }
+
+    /**
+     * Bind product picker modal events
+     */
+    bindProductPickerEvents() {
+        const modal = document.getElementById('productPickerModal');
+        const closeBtn = document.getElementById('closeProductPicker');
+        const importBtn = document.getElementById('importSelectedBtn');
+
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('visible');
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('visible');
+            }
+        });
+
+        importBtn.addEventListener('click', async () => {
+            if (this.selectedProductImages.size === 0) return;
+
+            modal.classList.remove('visible');
+            this.showToast(`Importing ${this.selectedProductImages.size} images...`, 'info');
+
+            // Load each selected image
+            for (const url of this.selectedProductImages) {
+                try {
+                    const dataUrl = await this.productScraper.loadAsDataUrl(url);
+                    if (dataUrl) {
+                        this.assets.push({
+                            id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            dataUrl,
+                            name: 'Product Image',
+                            source: 'product-page'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to load image:', url, error);
+                }
+            }
+
+            this.updatePreviewGrid();
+            this.analyzeAssets();
+            this.showToast(`Imported ${this.selectedProductImages.size} images`, 'success');
         });
     }
 

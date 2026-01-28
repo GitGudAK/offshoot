@@ -86,21 +86,47 @@
                         <h3>Drop style samples here</h3>
                         <p>or click to browse • PNG, JPG, WebP supported</p>
                         <div class="upload-divider">
-                            <span>or</span>
+                            <span>or import from URL</span>
+                        </div>
+                        <div class="url-tabs">
+                            <button class="url-tab active" data-type="image">🖼️ Image URL</button>
+                            <button class="url-tab" data-type="product">🛒 Product Page</button>
                         </div>
                         <div class="url-input-wrap">
-                            <input type="url" id="urlInput" placeholder="Paste image URL to import..."
-                                class="url-input">
+                            <input type="url" id="urlInput" placeholder="Paste image URL..." class="url-input">
                             <button class="btn btn-secondary" id="fetchUrlBtn">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
-                                    <circle cx="11" cy="11" r="8" />
-                                    <path d="M21 21l-4.35-4.35" />
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                 </svg>
-                                Fetch
+                                Import
                             </button>
                         </div>
+                        <p class="url-hint" id="urlHint">Direct link to an image file</p>
                         <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                    </div>
+                </div>
+
+                <!-- Product Image Picker Modal -->
+                <div class="modal-overlay" id="productPickerModal">
+                    <div class="modal modal-lg glass-panel">
+                        <div class="modal-header">
+                            <h2>Select Product Images</h2>
+                            <button class="btn-icon modal-close" id="closeProductPicker">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="modal-content">
+                            <p class="picker-status" id="pickerStatus">Loading images...</p>
+                            <div class="product-images-grid" id="productImagesGrid"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <span class="selected-count" id="selectedCount">0 selected</span>
+                            <button class="btn btn-primary" id="importSelectedBtn" disabled>Import Selected</button>
+                        </div>
                     </div>
                 </div>
 
