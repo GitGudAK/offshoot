@@ -39,7 +39,8 @@ class BrandAIEngine {
 
     loadSettings() {
         const defaults = {
-            apiKey: '',
+            geminiKey: '',
+            apiKey: '',  // Replicate key (optional, for training)
             defaultVariations: 4,
             autoAnalyze: true,
             showPrecision: true
@@ -394,19 +395,17 @@ class BrandAIEngine {
         const modelSelect = document.getElementById('generateModel');
         const hasModel = modelSelect.value !== '';
         const hasReference = !!this.referenceImage;
-        const hasApiKey = !!this.settings.apiKey;
+        const hasGeminiKey = !!this.settings.geminiKey;
 
-        generateBtn.disabled = !hasModel || !hasReference || !hasApiKey;
+        generateBtn.disabled = !hasReference || !hasGeminiKey;
 
-        if (!hasApiKey) {
-            generateBtn.innerHTML = '<span>API Key Required</span>';
+        if (!hasGeminiKey) {
+            generateBtn.innerHTML = '<span>Gemini API Key Required</span>';
         } else if (!hasReference) {
             generateBtn.innerHTML = '<span>Add Reference Image</span>';
-        } else if (!hasModel) {
-            generateBtn.innerHTML = '<span>Select Model</span>';
         } else {
             generateBtn.innerHTML = `
-                <span>Generate Variations</span>
+                <span>Generate Offshoots</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                 </svg>
@@ -464,6 +463,7 @@ class BrandAIEngine {
         const modal = document.getElementById('settingsModal');
 
         // Populate form
+        document.getElementById('geminiKeyInput').value = this.settings.geminiKey;
         document.getElementById('apiKeyInput').value = this.settings.apiKey;
         document.getElementById('defaultVariations').value = this.settings.defaultVariations;
         document.getElementById('autoAnalyze').checked = this.settings.autoAnalyze;
@@ -473,6 +473,7 @@ class BrandAIEngine {
     }
 
     saveSettingsFromForm() {
+        this.settings.geminiKey = document.getElementById('geminiKeyInput').value.trim();
         this.settings.apiKey = document.getElementById('apiKeyInput').value.trim();
         this.settings.defaultVariations = parseInt(document.getElementById('defaultVariations').value);
         this.settings.autoAnalyze = document.getElementById('autoAnalyze').checked;

@@ -50,13 +50,13 @@ export class GenerationAgent {
     }
 
     /**
-     * Generate image variations using Nano Banana Pro
+     * Generate image variations using Nano Banana Pro via Gemini API
      */
     async generate(options) {
         const { referenceImage, modelId, strength, count, prompt } = options;
 
-        if (!this.app.settings.apiKey) {
-            this.app.showToast('Please add your Replicate API key in settings', 'error');
+        if (!this.app.settings.geminiKey) {
+            this.app.showToast('Please add your Gemini API key in settings', 'error');
             return;
         }
 
@@ -67,21 +67,20 @@ export class GenerationAgent {
         this.showGeneratingState(count);
 
         try {
-            // Generate multiple variations
-            const promises = [];
+            // Generate multiple variations sequentially to avoid rate limits
             for (let i = 0; i < count; i++) {
-                promises.push(this.generateWithNanoBanana(referenceImage, model, strength, prompt, i));
+                try {
+                    const result = await this.generateWithGemini(referenceImage, model, strength, prompt, i);
+                    if (result) {
+                        this.generatedImages.push(result);
+                        this.renderGeneratedImages();
+                    }
+                } catch (error) {
+                    console.error(`Generation ${i + 1} failed:`, error);
+                }
             }
 
-            const results = await Promise.allSettled(promises);
-
-            // Process results
-            this.generatedImages = results
-                .filter(r => r.status === 'fulfilled' && r.value)
-                .map(r => r.value);
-
             if (this.generatedImages.length > 0) {
-                this.renderGeneratedImages();
                 this.runPrecisionChecks();
                 this.app.showToast(`Generated ${this.generatedImages.length} offshoot(s)`, 'success');
             } else {
@@ -97,57 +96,59 @@ export class GenerationAgent {
     }
 
     /**
-     * Generate a single image using Nano Banana Pro
+     * Generate a single image using Gemini API (Nano Banana Pro)
      */
-    async generateWithNanoBanana(referenceImage, model, strength, userPrompt, index) {
+    async generateWithGemini(referenceImage, model, strength, userPrompt, index) {
         // Build the generation prompt
-        // Use style description from the model's training if available
-        const styleDescription = model ?
-            `Create a variation in the same visual style, maintaining color palette and aesthetic.` :
-            '';
-
         const variationInstruction = strength > 0.7 ?
             'Create a significantly different variation while keeping the core subject.' :
             strength > 0.4 ?
                 'Create a moderate variation that balances similarity with creative changes.' :
                 'Create a subtle variation that stays very close to the original.';
 
-        const basePrompt = `${userPrompt || 'Transform this image'}, ${variationInstruction} ${styleDescription}`.trim();
+        const basePrompt = `${userPrompt || 'Transform this image into a creative variation'}, ${variationInstruction}`.trim();
 
-        // Prepare image input - Nano Banana Pro accepts image URLs or base64
-        const imageInput = [referenceImage.dataUrl];
+        // Extract base64 data from dataUrl
+        const base64Data = referenceImage.dataUrl.split(',')[1];
+        const mimeType = referenceImage.dataUrl.split(':')[1].split(';')[0];
 
-        // Create prediction via Replicate API using Nano Banana Pro
-        const response = await fetch('https://api.replicate.com/v1/predictions', {
+        // Call Gemini API directly with Nano Banana Pro (imagen-3.0)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${this.app.settings.geminiKey}`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${this.app.settings.apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: this.MODEL_ID,
-                input: {
+                instances: [{
                     prompt: basePrompt,
-                    image_input: imageInput,
-                    aspect_ratio: 'auto',
-                    resolution: '2K',
-                    output_format: 'png'
+                    referenceImages: [{
+                        referenceImage: {
+                            bytesBase64Encoded: base64Data
+                        },
+                        referenceType: 2 // STYLE reference type
+                    }]
+                }],
+                parameters: {
+                    sampleCount: 1,
+                    aspectRatio: "1:1",
+                    personGeneration: "ALLOW_ADULT"
                 }
             })
         });
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || 'Failed to create prediction');
+            console.error('Gemini API error:', error);
+            throw new Error(error.error?.message || 'Failed to generate image');
         }
 
-        const prediction = await response.json();
+        const result = await response.json();
 
-        // Poll for result
-        const result = await this.waitForPrediction(prediction.id);
+        // Extract generated image from response
+        if (result.predictions && result.predictions[0]?.bytesBase64Encoded) {
+            const generatedBase64 = result.predictions[0].bytesBase64Encoded;
+            const imageUrl = `data:image/png;base64,${generatedBase64}`;
 
-        if (result.status === 'succeeded' && result.output) {
-            const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
             return {
                 id: `gen-${Date.now()}-${index}`,
                 url: imageUrl,
@@ -155,46 +156,11 @@ export class GenerationAgent {
                 strength,
                 modelId: model?.id,
                 generatedAt: new Date().toISOString(),
-                engine: 'nano-banana-pro'
+                engine: 'gemini-imagen-3'
             };
         }
 
         return null;
-    }
-
-    /**
-     * Wait for prediction to complete
-     */
-    async waitForPrediction(predictionId, maxAttempts = 120) {
-        for (let i = 0; i < maxAttempts; i++) {
-            const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.app.settings.apiKey}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to check prediction status');
-            }
-
-            const prediction = await response.json();
-
-            if (prediction.status === 'succeeded') {
-                return prediction;
-            }
-
-            if (prediction.status === 'failed') {
-                throw new Error(prediction.error || 'Prediction failed');
-            }
-
-            // Update progress indicator
-            this.updateGeneratingProgress(i, maxAttempts);
-
-            // Wait before next poll
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-
-        throw new Error('Prediction timed out');
     }
 
     /**

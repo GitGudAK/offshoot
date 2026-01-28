@@ -355,9 +355,15 @@
                 </div>
                 <div class="modal-content">
                     <div class="form-group">
-                        <label>Replicate API Key</label>
+                        <label>Gemini API Key <span class="badge-recommended">Recommended</span></label>
+                        <input type="password" id="geminiKeyInput" placeholder="AIza..." class="form-input">
+                        <small>For image generation with Nano Banana Pro. <a href="https://aistudio.google.com/apikey"
+                                target="_blank">Get your key →</a></small>
+                    </div>
+                    <div class="form-group">
+                        <label>Replicate API Key <span class="badge-optional">Optional</span></label>
                         <input type="password" id="apiKeyInput" placeholder="r8_..." class="form-input">
-                        <small>Required for model training and generation.</small>
+                        <small>For LoRA model training (optional).</small>
                     </div>
                     <div class="form-group">
                         <label>Default Offshoots</label>
