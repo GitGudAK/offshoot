@@ -1449,3 +1449,142 @@ body {
 .modal-content small a:hover {
     text-decoration: underline;
 }
+
+/* Unified Model Provider Cards */
+.modal-lg {
+    max-width: 560px;
+}
+
+.settings-section {
+    margin-bottom: var(--space-xl);
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.settings-section-desc {
+    font-size: 0.813rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+}
+
+.provider-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.provider-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.provider-card:hover {
+    border-color: var(--border-light);
+}
+
+.provider-card.connected {
+    border-color: var(--success);
+}
+
+.provider-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--surface-glass);
+}
+
+.provider-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: white;
+}
+
+.provider-icon.gemini-icon {
+    background: linear-gradient(135deg, #4285f4 0%, #ea4335 50%, #fbbc05 100%);
+}
+
+.provider-icon.replicate-icon {
+    background: linear-gradient(135deg, #000000 0%, #333333 100%);
+}
+
+.provider-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.provider-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.provider-use {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.provider-status {
+    padding: var(--space-xs) var(--space-sm);
+}
+
+.provider-status .status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.provider-card.connected .status-indicator {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+
+.provider-body {
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.provider-body .form-input {
+    width: 100%;
+}
+
+.provider-link {
+    font-size: 0.75rem;
+    color: var(--accent-primary);
+    text-decoration: none;
+    align-self: flex-start;
+}
+
+.provider-link:hover {
+    text-decoration: underline;
+}
+
+/* Training parameter tooltips */
+.param-help {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: var(--space-xs);
+    line-height: 1.4;
+}

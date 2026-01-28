@@ -469,6 +469,9 @@ class BrandAIEngine {
         document.getElementById('autoAnalyze').checked = this.settings.autoAnalyze;
         document.getElementById('showPrecision').checked = this.settings.showPrecision;
 
+        // Update provider card status
+        this.updateProviderStatus();
+
         modal.classList.add('visible');
     }
 
@@ -482,6 +485,19 @@ class BrandAIEngine {
         this.saveSettings();
         this.updateLaunchButton();
         this.updateGenerateButton();
+        this.updateProviderStatus();
+    }
+
+    updateProviderStatus() {
+        const geminiCard = document.getElementById('geminiCard');
+        const replicateCard = document.getElementById('replicateCard');
+
+        if (geminiCard) {
+            geminiCard.classList.toggle('connected', !!this.settings.geminiKey);
+        }
+        if (replicateCard) {
+            replicateCard.classList.toggle('connected', !!this.settings.apiKey);
+        }
     }
 
     // ===============================

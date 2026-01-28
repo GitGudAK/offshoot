@@ -166,37 +166,43 @@
                             <div class="form-group">
                                 <label>Model Name</label>
                                 <input type="text" id="modelName" placeholder="my-style-v1" class="form-input">
+                                <p class="param-help">A unique name to identify this trained style</p>
                             </div>
                             <div class="form-group">
                                 <label>Base Model</label>
                                 <select id="baseModel" class="form-select">
-                                    <option value="flux-dev">Flux Dev (Recommended)</option>
-                                    <option value="flux-schnell">Flux Schnell (Fast)</option>
-                                    <option value="sdxl">Stable Diffusion XL</option>
+                                    <option value="flux-dev">Flux Dev (Best Quality)</option>
+                                    <option value="flux-schnell">Flux Schnell (Faster)</option>
                                 </select>
+                                <p class="param-help">The AI model that learns your style</p>
                             </div>
                             <div class="form-group">
-                                <label>Training Steps</label>
+                                <label>Training Duration</label>
                                 <div class="slider-group">
-                                    <input type="range" id="trainingSteps" min="100" max="2000" value="500"
+                                    <input type="range" id="trainingSteps" min="300" max="1500" value="500"
                                         class="form-slider">
                                     <span class="slider-value" id="stepsValue">500</span>
                                 </div>
+                                <p class="param-help">⚡ Less = faster but less accurate • 🎯 More = slower but learns
+                                    better</p>
                             </div>
                             <div class="form-group">
-                                <label>LoRA Rank</label>
+                                <label>Style Memory</label>
                                 <div class="slider-group">
-                                    <input type="range" id="loraRank" min="4" max="64" value="16" class="form-slider">
+                                    <input type="range" id="loraRank" min="8" max="32" value="16" class="form-slider">
                                     <span class="slider-value" id="rankValue">16</span>
                                 </div>
+                                <p class="param-help">How much detail to remember • 16 works for most styles, increase
+                                    for complex patterns</p>
                             </div>
                             <div class="form-group">
-                                <label>Learning Rate</label>
+                                <label>Learning Speed</label>
                                 <select id="learningRate" class="form-select">
-                                    <option value="1e-4">1e-4 (Default)</option>
-                                    <option value="5e-5">5e-5 (Conservative)</option>
-                                    <option value="2e-4">2e-4 (Aggressive)</option>
+                                    <option value="1e-4">Normal (Recommended)</option>
+                                    <option value="5e-5">Careful (Better for subtle styles)</option>
+                                    <option value="2e-4">Fast (May overfit)</option>
                                 </select>
+                                <p class="param-help">How aggressively the AI learns • Start with Normal</p>
                             </div>
                         </div>
                         <button class="btn btn-primary" id="launchTrainingBtn" disabled>
@@ -343,7 +349,7 @@
 
         <!-- Settings Modal -->
         <div class="modal-overlay" id="settingsModal">
-            <div class="modal glass-panel">
+            <div class="modal modal-lg glass-panel">
                 <div class="modal-header">
                     <h2>Settings</h2>
                     <button class="btn-icon modal-close" id="closeSettings">
@@ -354,33 +360,84 @@
                     </button>
                 </div>
                 <div class="modal-content">
-                    <div class="form-group">
-                        <label>Gemini API Key <span class="badge-recommended">Recommended</span></label>
-                        <input type="password" id="geminiKeyInput" placeholder="AIza..." class="form-input">
-                        <small>For image generation with Nano Banana Pro. <a href="https://aistudio.google.com/apikey"
-                                target="_blank">Get your key →</a></small>
+                    <!-- Model Providers Section -->
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">🔌 Model Providers</h3>
+                        <p class="settings-section-desc">Connect your API keys to enable generation and training</p>
+
+                        <div class="provider-cards">
+                            <!-- Gemini Card -->
+                            <div class="provider-card" id="geminiCard">
+                                <div class="provider-header">
+                                    <div class="provider-icon gemini-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                                        </svg>
+                                    </div>
+                                    <div class="provider-info">
+                                        <span class="provider-name">Google Gemini</span>
+                                        <span class="provider-use">Image Generation</span>
+                                    </div>
+                                    <div class="provider-status" id="geminiStatus">
+                                        <span class="status-indicator"></span>
+                                    </div>
+                                </div>
+                                <div class="provider-body">
+                                    <input type="password" id="geminiKeyInput" placeholder="AIza..." class="form-input">
+                                    <a href="https://aistudio.google.com/apikey" target="_blank"
+                                        class="provider-link">Get API Key →</a>
+                                </div>
+                            </div>
+
+                            <!-- Replicate Card -->
+                            <div class="provider-card" id="replicateCard">
+                                <div class="provider-header">
+                                    <div class="provider-icon replicate-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <rect x="3" y="3" width="7" height="7" rx="1" />
+                                            <rect x="14" y="3" width="7" height="7" rx="1" />
+                                            <rect x="3" y="14" width="7" height="7" rx="1" />
+                                            <rect x="14" y="14" width="7" height="7" rx="1" />
+                                        </svg>
+                                    </div>
+                                    <div class="provider-info">
+                                        <span class="provider-name">Replicate</span>
+                                        <span class="provider-use">LoRA Training</span>
+                                    </div>
+                                    <div class="provider-status" id="replicateStatus">
+                                        <span class="status-indicator"></span>
+                                    </div>
+                                </div>
+                                <div class="provider-body">
+                                    <input type="password" id="apiKeyInput" placeholder="r8_..." class="form-input">
+                                    <a href="https://replicate.com/account/api-tokens" target="_blank"
+                                        class="provider-link">Get API Key →</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Replicate API Key <span class="badge-optional">Optional</span></label>
-                        <input type="password" id="apiKeyInput" placeholder="r8_..." class="form-input">
-                        <small>For LoRA model training (optional).</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Default Offshoots</label>
-                        <select id="defaultVariations" class="form-select">
-                            <option value="2">2 offshoots</option>
-                            <option value="4" selected>4 offshoots</option>
-                            <option value="6">6 offshoots</option>
-                            <option value="8">8 offshoots</option>
-                        </select>
-                    </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="autoAnalyze" checked>
-                        <label for="autoAnalyze">Auto-analyze uploaded samples</label>
-                    </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="showPrecision" checked>
-                        <label for="showPrecision">Show quality reports</label>
+
+                    <!-- Preferences Section -->
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">⚙️ Preferences</h3>
+
+                        <div class="form-group">
+                            <label>Default Offshoots</label>
+                            <select id="defaultVariations" class="form-select">
+                                <option value="2">2 offshoots</option>
+                                <option value="4" selected>4 offshoots</option>
+                                <option value="6">6 offshoots</option>
+                                <option value="8">8 offshoots</option>
+                            </select>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="autoAnalyze" checked>
+                            <label for="autoAnalyze">Auto-analyze uploaded samples</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="showPrecision" checked>
+                            <label for="showPrecision">Show quality reports</label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
