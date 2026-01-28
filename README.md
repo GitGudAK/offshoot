@@ -114,10 +114,16 @@ offshoot/
 
 ## 🔌 API Integration
 
-| Feature | Replicate Model | Cost |
-|---------|-----------------|------|
+| Feature | Model | Cost |
+|---------|-------|------|
 | LoRA Training | `ostris/flux-dev-lora-trainer` | ~$0.10-0.50/job |
-| Image Generation | Custom trained model | ~$0.01/image |
+| Image Generation | `google/nano-banana-pro` | ~$0.01-0.05/image |
+
+**Nano Banana Pro** is Google's state-of-the-art image generation model (Gemini 3 Pro based) featuring:
+- Character consistency across variations
+- Precise local editing
+- High-quality text rendering
+- Up to 4K resolution output
 
 ## 🎨 Design
 
