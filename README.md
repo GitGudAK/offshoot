@@ -2,7 +2,6 @@
 
 Create styled image variations using custom-trained AI models. Upload samples, train your style, generate offshoots.
 
-![Offshoot Demo](docs/demo.gif)
 
 ## ✨ Features
 
