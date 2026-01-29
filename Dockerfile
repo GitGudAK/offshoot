@@ -1,5 +1,8 @@
 FROM nginx:alpine
 
+# Cache-bust to ensure fresh copies
+ARG CACHEBUST=1
+
 # Copy static files
 COPY index.html /usr/share/nginx/html/
 COPY index.css /usr/share/nginx/html/
