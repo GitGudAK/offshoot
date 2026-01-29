@@ -273,10 +273,15 @@ class BrandAIEngine {
                 try {
                     const dataUrl = await this.productScraper.loadAsDataUrl(url);
                     if (dataUrl) {
+                        // Determine type from dataUrl header
+                        const mimeMatch = dataUrl.match(/^data:([^;]+);/);
+                        const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
                         this.assets.push({
                             id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                             dataUrl,
                             name: 'Product Image',
+                            type: mimeType,
                             source: 'product-page'
                         });
                     }
