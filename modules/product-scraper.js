@@ -6,11 +6,11 @@
 export class ProductScraper {
     constructor(app) {
         this.app = app;
-        // Multiple CORS proxies for fallback
+        // Multiple CORS proxies for fallback (GCP primary, public fallbacks)
         this.proxies = [
+            { name: 'gcp', url: 'https://us-central1-gen-lang-client-0655380841.cloudfunctions.net/corsProxy?url=', type: 'json', key: 'contents' },
             { name: 'allorigins', url: 'https://api.allorigins.win/get?url=', type: 'json', key: 'contents' },
             { name: 'corsproxy', url: 'https://corsproxy.io/?', type: 'text' },
-            { name: 'corsanywhere', url: 'https://cors-anywhere.herokuapp.com/', type: 'text' },
         ];
     }
 
