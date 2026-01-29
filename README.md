@@ -135,12 +135,33 @@ offshoot/
 - **Smooth animations** and micro-interactions
 - **Responsive** layout
 
+## 🔒 Security
+
+- **No hardcoded keys** — API keys are entered via Settings UI and stored in browser `localStorage`
+- **Client-side only** — Keys never leave your browser or get sent to any server except the respective APIs
+- **`.gitignore` configured** — `.env` files excluded from version control
+- **Your own keys** — Each user must provide their own Gemini/Replicate API keys
+
+> ⚠️ **Note**: Keys stored in `localStorage` persist across sessions. Clear browser data to remove them.
+
+## ☁️ Cloud Deployment
+
+The app can be deployed to Google Cloud:
+
+| Component | Service | Command |
+|-----------|---------|---------|
+| Frontend | Cloud Run | `gcloud run deploy offshoot --source .` |
+| CORS Proxy | Cloud Functions | `gcloud functions deploy corsProxy --source cors-proxy/` |
+
+See `cors-proxy/README.md` for detailed deployment instructions.
+
 ## 📈 Roadmap
 
 - [x] Gemini API integration
 - [x] Product page scraping
 - [x] Unified settings UI
 - [x] Simplified training parameters
+- [x] Cloud deployment (Cloud Run + Functions)
 - [ ] Batch generation mode
 - [ ] Style comparison tools
 - [ ] Export to Figma/Adobe
