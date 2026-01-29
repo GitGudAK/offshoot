@@ -13,10 +13,10 @@ const ALLOWED_ORIGINS = [
     'http://localhost:5000',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5000',
-    // Add your production domain:
-    // 'https://yourapp.com',
-    // 'https://www.yourapp.com',
+    // Production domain (Cloud Run)
+    'https://offshoot-302720451678.us-central1.run.app',
 ];
+
 
 // Block these domains to prevent abuse
 const BLOCKED_DOMAINS = [
