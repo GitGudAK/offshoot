@@ -105,9 +105,73 @@ export class TrainingEngine {
     }
 
     /**
-     * Upload ZIP file to file.io (temporary hosting)
+     * Upload ZIP file to temporary hosting
+     * Tries multiple services for reliability
      */
     async uploadZip(blob) {
+        // Try multiple file hosting services
+        const services = [
+            { name: '0x0.st', upload: () => this.uploadTo0x0(blob) },
+            { name: 'tmpfiles.org', upload: () => this.uploadToTmpfiles(blob) },
+            { name: 'file.io', upload: () => this.uploadToFileIo(blob) },
+        ];
+
+        let lastError = null;
+        for (const service of services) {
+            try {
+                console.log(`Trying upload to ${service.name}...`);
+                const url = await service.upload();
+                if (url) {
+                    console.log(`Upload successful: ${service.name}`);
+                    return url;
+                }
+            } catch (error) {
+                console.warn(`Upload to ${service.name} failed:`, error.message);
+                lastError = error;
+            }
+        }
+
+        throw new Error(`All upload services failed. Last error: ${lastError?.message || 'Unknown'}`);
+    }
+
+    async uploadTo0x0(blob) {
+        const formData = new FormData();
+        formData.append('file', blob, 'training_images.zip');
+
+        const response = await fetch('https://0x0.st', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`0x0.st returned ${response.status}`);
+        }
+
+        const url = await response.text();
+        return url.trim();
+    }
+
+    async uploadToTmpfiles(blob) {
+        const formData = new FormData();
+        formData.append('file', blob, 'training_images.zip');
+
+        const response = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`tmpfiles.org returned ${response.status}`);
+        }
+
+        const result = await response.json();
+        // Convert view URL to direct download URL
+        const viewUrl = result.data?.url;
+        if (!viewUrl) throw new Error('No URL in response');
+        return viewUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+    }
+
+    async uploadToFileIo(blob) {
         const formData = new FormData();
         formData.append('file', blob, 'training_images.zip');
 
@@ -117,17 +181,17 @@ export class TrainingEngine {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to upload training data');
+            throw new Error(`file.io returned ${response.status}`);
         }
 
         const result = await response.json();
-
         if (!result.success) {
-            throw new Error('File upload failed');
+            throw new Error('file.io upload failed');
         }
 
         return result.link;
     }
+
 
     /**
      * Create training job via Replicate API
