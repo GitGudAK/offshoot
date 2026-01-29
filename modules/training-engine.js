@@ -22,7 +22,7 @@ export class TrainingEngine {
      * Start LoRA training with assets
      */
     async startTraining(assets, config) {
-        if (!this.app.settings.apiKey) {
+        if (!this.app.settings.replicateApiKey) {
             this.app.showToast('Please add your Replicate API key in settings', 'error');
             return;
         }
@@ -76,8 +76,12 @@ export class TrainingEngine {
 
         for (let i = 0; i < assets.length; i++) {
             const asset = assets[i];
-            const base64Data = asset.dataUrl.split(',')[1];
-            const extension = asset.type.split('/')[1] || 'jpg';
+            if (!asset.dataUrl) {
+                console.warn(`Asset ${i} missing dataUrl, skipping`);
+                continue;
+            }
+            const base64Data = asset.dataUrl.split(',')[1] || '';
+            const extension = (asset.type || 'image/jpg').split('/')[1] || 'jpg';
 
             // Add image to zip with caption file
             zip.file(`${i}.${extension}`, base64Data, { base64: true });
@@ -141,11 +145,11 @@ export class TrainingEngine {
         const response = await fetch('https://api.replicate.com/v1/trainings', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${this.app.settings.apiKey}`,
+                'Authorization': `Bearer ${this.app.settings.replicateApiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                destination: `${this.app.settings.apiKey.split('_')[0] || 'user'}/${config.name}`,
+                destination: `${(this.app.settings.replicateApiKey || '').split('_')[0] || 'user'}/${config.name}`,
                 input: {
                     input_images: zipUrl,
                     trigger_word: 'TOK',
@@ -218,7 +222,7 @@ export class TrainingEngine {
     async checkTrainingStatus(trainingId) {
         const response = await fetch(`https://api.replicate.com/v1/trainings/${trainingId}`, {
             headers: {
-                'Authorization': `Bearer ${this.app.settings.apiKey}`
+                'Authorization': `Bearer ${this.app.settings.replicateApiKey}`
             }
         });
 
